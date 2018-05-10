@@ -5,6 +5,9 @@ import { computed } from "@ember/object";
 export default Service.extend({
   firebase: service(),
   instance: computed("firebase", function() {
-    return this.get("firebase").firestore();
+    const firestore = this.get("firebase").firestore();
+    const settings = { timestampsInSnapshots: true };
+    firestore.settings(settings);
+    return firestore;
   })
 });
