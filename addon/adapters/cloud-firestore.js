@@ -454,7 +454,7 @@ export default RESTAdapter.extend({
     return this.buildCollectionRef(
       type.modelName,
       snapshot.adapterOptions,
-      this.get("firestore.instance");
+      this.get("firestore.instance")
     ).doc(snapshot.id);
   },
 
