@@ -1,14 +1,14 @@
-import { Promise } from "rsvp";
-import { getOwner } from "@ember/application";
-import { inject } from "@ember/service";
-import { run } from "@ember/runloop";
-import RESTAdapter from "ember-data/adapters/rest";
+import { Promise } from 'rsvp';
+import { getOwner } from '@ember/application';
+import { inject } from '@ember/service';
+import { run } from '@ember/runloop';
+import RESTAdapter from 'ember-data/adapters/rest';
 
 import {
   buildCollectionName,
   buildRefFromPath,
-  parseDocSnapshot
-} from "ember-cloud-firestore-adapter/utils/parser";
+  parseDocSnapshot,
+} from 'ember-cloud-firestore-adapter/utils/parser';
 
 /**
  * @class CloudFirestore
@@ -25,17 +25,17 @@ export default RESTAdapter.extend({
    * @type {string}
    * @readonly
    */
-  dbType: "cloud-firestore",
+  dbType: 'cloud-firestore',
 
   /**
    * @override
    */
-  defaultSerializer: "cloud-firestore",
+  defaultSerializer: 'cloud-firestore',
 
   /**
    * @override
    */
-  headers: { "Content-Type": "application/json" },
+  headers: { 'Content-Type': 'application/json' },
 
   /**
    * @type {boolean}
@@ -46,7 +46,7 @@ export default RESTAdapter.extend({
    * @override
    */
   generateIdForRecord(store, type) {
-    const db = this.get("firestore.instance");
+    const db = this.get('firestore.instance');
     const collectionName = buildCollectionName(type);
 
     return db.collection(collectionName).doc().id;
@@ -56,11 +56,11 @@ export default RESTAdapter.extend({
    * @override
    */
   createRecord(store, type, snapshot) {
-    const config = getOwner(this).resolveRegistration("config:environment");
-    let onServer = this.getAdapterOptionAttribute(snapshot, "onServer");
+    const config = getOwner(this).resolveRegistration('config:environment');
+    let onServer = this.getAdapterOptionAttribute(snapshot, 'onServer');
 
     // TODO: Figure out a better way to solve this
-    if (onServer && config.environment === "test") {
+    if (onServer && config.environment === 'test') {
       // Force to false so we could mock our tests
       snapshot.adapterOptions.onServer = false;
       onServer = false;
@@ -85,11 +85,11 @@ export default RESTAdapter.extend({
    * @override
    */
   updateRecord(store, type, snapshot) {
-    const config = getOwner(this).resolveRegistration("config:environment");
-    let onServer = this.getAdapterOptionAttribute(snapshot, "onServer");
+    const config = getOwner(this).resolveRegistration('config:environment');
+    let onServer = this.getAdapterOptionAttribute(snapshot, 'onServer');
 
     // TODO: Figure out a better way to solve this
-    if (onServer && config.environment === "test") {
+    if (onServer && config.environment === 'test') {
       // Force to false so we could mock our tests
       snapshot.adapterOptions.onServer = false;
       onServer = false;
@@ -111,13 +111,13 @@ export default RESTAdapter.extend({
             // `onSnapshot()` will resolve to the cached record and
             // `listenForDocChanges()` will do nothing since there's
             // already a listener for the record to be updated.
-            const unsubscribe = docRef.onSnapshot(docSnapshot => {
+            const unsubscribe = docRef.onSnapshot((docSnapshot) => {
               store.listenForDocChanges(type, docRef);
               run(null, resolve, parseDocSnapshot(type, docSnapshot));
               unsubscribe();
             });
           })
-          .catch(error => {
+          .catch((error) => {
             run(null, reject, error);
           });
       });
@@ -128,11 +128,11 @@ export default RESTAdapter.extend({
    * @override
    */
   deleteRecord(store, type, snapshot) {
-    const config = getOwner(this).resolveRegistration("config:environment");
-    let onServer = this.getAdapterOptionAttribute(snapshot, "onServer");
+    const config = getOwner(this).resolveRegistration('config:environment');
+    let onServer = this.getAdapterOptionAttribute(snapshot, 'onServer');
 
     // TODO: Figure out a better way to solve this
-    if (onServer && config.environment === "test") {
+    if (onServer && config.environment === 'test') {
       // Force to false so we could mock our tests
       snapshot.adapterOptions.onServer = false;
       onServer = false;
@@ -142,7 +142,7 @@ export default RESTAdapter.extend({
       return this._super(store, type, snapshot);
     } else {
       return new Promise((resolve, reject) => {
-        const db = this.get("firestore.instance");
+        const db = this.get('firestore.instance');
         const docRef = db
           .collection(buildCollectionName(type.modelName))
           .doc(snapshot.id);
@@ -153,7 +153,7 @@ export default RESTAdapter.extend({
           .then(() => {
             run(null, resolve);
           })
-          .catch(error => {
+          .catch((error) => {
             run(null, reject, error);
           });
       });
@@ -165,39 +165,39 @@ export default RESTAdapter.extend({
    */
   findAll(store, type) {
     return new Promise((resolve, reject) => {
-      const db = this.get("firestore.instance");
+      const db = this.get('firestore.instance');
       const collectionName = buildCollectionName(type.modelName);
       const collectionRef = db.collection(collectionName);
       const unsubscribe = collectionRef.onSnapshot(
-        querySnapshot => {
+        (querySnapshot) => {
           store.listenForCollectionChanges(collectionRef);
 
           const requests = [];
 
-          querySnapshot.forEach(docSnapshot => {
+          querySnapshot.forEach((docSnapshot) => {
             const request = this.findRecord(store, type, docSnapshot.id);
 
             requests.push(request);
           });
 
           Promise.all(requests)
-            .then(responses => {
+            .then((responses) => {
               const docs = [];
 
-              responses.forEach(doc => {
+              responses.forEach((doc) => {
                 docs.push(doc);
               });
 
               run(null, resolve, docs);
               unsubscribe();
             })
-            .catch(error => {
+            .catch((error) => {
               run(null, reject, error);
             });
         },
-        error => {
+        (error) => {
           run(null, reject, error);
-        }
+        },
       );
     });
   },
@@ -207,27 +207,27 @@ export default RESTAdapter.extend({
    */
   findRecord(store, type, id, snapshot = {}) {
     return new Promise((resolve, reject) => {
-      const db = this.get("firestore.instance");
+      const db = this.get('firestore.instance');
       const collectionRef = this.buildCollectionRef(
         type.modelName,
         snapshot.adapterOptions,
-        db
+        db,
       );
       const docRef = collectionRef.doc(id);
       const unsubscribe = docRef.onSnapshot(
-        docSnapshot => {
+        (docSnapshot) => {
           if (docSnapshot.exists) {
             store.listenForDocChanges(type, docRef);
             run(null, resolve, parseDocSnapshot(type, docSnapshot));
           } else {
-            run(null, reject, new Error("Document doesn't exist"));
+            run(null, reject, new Error('Document doesn\'t exist'));
           }
 
           unsubscribe();
         },
-        error => {
+        (error) => {
           run(null, reject, error);
-        }
+        },
       );
     });
   },
@@ -237,15 +237,15 @@ export default RESTAdapter.extend({
    */
   findBelongsTo(store, snapshot, url, relationship) {
     const type = { modelName: relationship.type };
-    const urlNodes = url.split("/");
+    const urlNodes = url.split('/');
     const id = urlNodes.pop();
 
     return this.findRecord(store, type, id, {
       adapterOptions: {
         buildReference(db) {
-          return buildRefFromPath(db, urlNodes.join("/"));
-        }
-      }
+          return buildRefFromPath(db, urlNodes.join('/'));
+        },
+      },
     });
   },
 
@@ -258,24 +258,24 @@ export default RESTAdapter.extend({
         store,
         snapshot,
         url,
-        relationship
+        relationship,
       );
       const unsubscribe = collectionRef.onSnapshot(
-        querySnapshot => {
+        (querySnapshot) => {
           const requests = [];
 
-          querySnapshot.forEach(docSnapshot => {
+          querySnapshot.forEach((docSnapshot) => {
             const type = { modelName: relationship.type };
 
-            if (docSnapshot.get("cloudFirestoreReference")) {
-              const docRef = docSnapshot.get("cloudFirestoreReference");
+            if (docSnapshot.get('cloudFirestoreReference')) {
+              const docRef = docSnapshot.get('cloudFirestoreReference');
               const docId = docRef.id;
               const request = this.findRecord(store, type, docId, {
                 adapterOptions: {
                   buildReference() {
                     return docRef.parent;
-                  }
-                }
+                  },
+                },
               });
 
               requests.push(request);
@@ -287,24 +287,24 @@ export default RESTAdapter.extend({
           });
 
           Promise.all(requests)
-            .then(responses => {
+            .then((responses) => {
               store.listenForHasManyChanges(
                 snapshot.modelName,
                 snapshot.id,
                 relationship.key,
-                collectionRef
+                collectionRef,
               );
 
               run(null, resolve, responses);
               unsubscribe();
             })
-            .catch(error => {
+            .catch((error) => {
               run(null, reject, error);
             });
         },
-        error => {
+        (error) => {
           run(null, reject, error);
-        }
+        },
       );
     });
   },
@@ -314,46 +314,46 @@ export default RESTAdapter.extend({
    */
   query(store, type, query = {}) {
     return new Promise((resolve, reject) => {
-      const db = this.get("firestore.instance");
+      const db = this.get('firestore.instance');
       let collectionRef = this.buildCollectionRef(type.modelName, query, db);
 
       collectionRef = this.buildQuery(collectionRef, query);
 
       const unsubscribe = collectionRef.onSnapshot(
-        querySnapshot => {
+        (querySnapshot) => {
           const requests = this.findQuerySnapshotRecords(
             store,
             type,
             query,
-            querySnapshot
+            querySnapshot,
           );
 
           Promise.all(requests)
-            .then(responses => {
+            .then((responses) => {
               if (query.queryId) {
                 store.listenForQueryChanges(
                   type.modelName,
                   query,
-                  collectionRef
+                  collectionRef,
                 );
               }
 
               const docs = [];
 
-              responses.forEach(doc => {
+              responses.forEach((doc) => {
                 docs.push(doc);
               });
 
               run(null, resolve, docs);
               unsubscribe();
             })
-            .catch(error => {
+            .catch((error) => {
               run(null, reject, error);
             });
         },
-        error => {
+        (error) => {
           run(null, reject, error);
-        }
+        },
       );
     });
   },
@@ -364,8 +364,8 @@ export default RESTAdapter.extend({
   methodForRequest(params) {
     const method = this._super(params);
 
-    if (method === "PUT") {
-      return "PATCH";
+    if (method === 'PUT') {
+      return 'PATCH';
     }
 
     return method;
@@ -388,7 +388,7 @@ export default RESTAdapter.extend({
    * @private
    */
   buildCollectionRef(modelName, option = {}, db) {
-    if (option.hasOwnProperty("buildReference")) {
+    if (option.hasOwnProperty('buildReference')) {
       return option.buildReference(db);
     }
 
@@ -403,24 +403,24 @@ export default RESTAdapter.extend({
    * @return {firebase.firestore.CollectionReference|firebase.firestore.Query} Reference
    */
   buildHasManyCollectionRef(store, snapshot, url, relationship) {
-    const db = this.get("firestore.instance");
+    const db = this.get('firestore.instance');
     const cardinality = snapshot.type.determineRelationshipType(
       relationship,
-      store
+      store,
     );
     let collectionRef;
 
-    if (cardinality === "manyToOne") {
+    if (cardinality === 'manyToOne') {
       const inverse = snapshot.type.inverseFor(relationship.key, store);
       const collectionName = buildCollectionName(snapshot.modelName);
       const reference = db.collection(collectionName).doc(snapshot.id);
 
-      collectionRef = db.collection(url).where(inverse.name, "==", reference);
+      collectionRef = db.collection(url).where(inverse.name, '==', reference);
     } else {
-      if (relationship.options.hasOwnProperty("buildReference")) {
+      if (relationship.options.hasOwnProperty('buildReference')) {
         collectionRef = relationship.options.buildReference(
           db,
-          snapshot.record
+          snapshot.record,
         );
       } else {
         collectionRef = buildRefFromPath(db, url);
@@ -430,7 +430,7 @@ export default RESTAdapter.extend({
     return this.buildQuery(
       collectionRef,
       relationship.options,
-      snapshot.record
+      snapshot.record,
     );
   },
 
@@ -443,10 +443,10 @@ export default RESTAdapter.extend({
    * @private
    */
   buildUpdateRecordDocRef(type, snapshot) {
-    const isCreate = this.getAdapterOptionAttribute(snapshot, "isCreate");
+    const isCreate = this.getAdapterOptionAttribute(snapshot, 'isCreate');
 
     if (!isCreate) {
-      if (this.getAdapterOptionAttribute(snapshot, "buildReference")) {
+      if (this.getAdapterOptionAttribute(snapshot, 'buildReference')) {
         delete snapshot.adapterOptions.buildReference;
       }
     }
@@ -454,7 +454,7 @@ export default RESTAdapter.extend({
     return this.buildCollectionRef(
       type.modelName,
       snapshot.adapterOptions,
-      this.get("firestore.instance")
+      this.get('firestore.instance'),
     ).doc(snapshot.id);
   },
 
@@ -469,7 +469,7 @@ export default RESTAdapter.extend({
    * @private
    */
   buildWriteBatch(type, snapshot, docRef, isDeletingMainDoc) {
-    const db = this.get("firestore.instance");
+    const db = this.get('firestore.instance');
     const payload = this.serialize(snapshot);
     const batch = db.batch();
 
@@ -494,7 +494,7 @@ export default RESTAdapter.extend({
    * @private
    */
   buildQuery(collectionRef, option = {}, record) {
-    if (option.hasOwnProperty("filter")) {
+    if (option.hasOwnProperty('filter')) {
       return option.filter(collectionRef, record);
     }
 
@@ -510,7 +510,7 @@ export default RESTAdapter.extend({
    * @private
    */
   addIncludesToBatch(batch, db, snapshot) {
-    const include = this.getAdapterOptionAttribute(snapshot, "include");
+    const include = this.getAdapterOptionAttribute(snapshot, 'include');
 
     if (include) {
       include(batch, db);
@@ -530,8 +530,8 @@ export default RESTAdapter.extend({
   findQuerySnapshotRecords(store, type, query, querySnapshot) {
     const requests = [];
 
-    querySnapshot.forEach(docSnapshot => {
-      const referenceTo = docSnapshot.get("cloudFirestoreTo");
+    querySnapshot.forEach((docSnapshot) => {
+      const referenceTo = docSnapshot.get('cloudFirestoreTo');
 
       if (referenceTo && referenceTo.firestore) {
         const docId = referenceTo.id;
@@ -540,14 +540,14 @@ export default RESTAdapter.extend({
           adapterOptions: {
             buildReference() {
               return collectionRef;
-            }
-          }
+            },
+          },
         });
 
         requests.push(request);
       } else {
         const request = this.findRecord(store, type, docSnapshot.id, {
-          adapterOptions: query
+          adapterOptions: query,
         });
 
         requests.push(request);
@@ -570,9 +570,9 @@ export default RESTAdapter.extend({
       snapshot.adapterOptions &&
       snapshot.adapterOptions.hasOwnProperty(key)
     ) {
-      return snapshot["adapterOptions"][key];
+      return snapshot['adapterOptions'][key];
     }
 
     return null;
-  }
+  },
 });

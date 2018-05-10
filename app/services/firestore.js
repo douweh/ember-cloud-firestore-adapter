@@ -1,1 +1,1 @@
-export { default } from "ember-cloud-firestore-adapter/services/firestore";
+export { default } from 'ember-cloud-firestore-adapter/services/firestore';
