@@ -1,7 +1,10 @@
 import Service from "@ember/service";
 import { inject as service } from "@ember/service";
+import { computed } from "@ember/object";
 
 export default Service.extend({
   firebase: service(),
-  instance: this.get("firebase").firestore()
+  instance: computed("firebase", () => {
+    return this.get("firebase").firestore();
+  })
 });
