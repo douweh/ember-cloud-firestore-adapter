@@ -1,12 +1,12 @@
-import { inject } from '@ember/service';
-import { pluralize } from 'ember-inflector';
-import JSONSerializer from 'ember-data/serializers/json';
+import { inject } from "@ember/service";
+import { pluralize } from "ember-inflector";
+import JSONSerializer from "ember-data/serializers/json";
 
 import {
   buildCollectionName,
   buildPathFromRef,
-  buildRefFromPath,
-} from 'ember-cloud-firestore-adapter/utils/parser';
+  buildRefFromPath
+} from "ember-cloud-firestore-adapter/utils/parser";
 
 /**
  * @class CloudFirestore
@@ -17,7 +17,7 @@ export default JSONSerializer.extend({
   /**
    * @type {Ember.Service}
    */
-  firebase: inject(),
+  firestore: inject(),
 
   /**
    * Overriden to properly get the data of a `Reference` type relationship
@@ -26,12 +26,12 @@ export default JSONSerializer.extend({
    */
   extractRelationship(relationshipModelName, relationshipHash) {
     if (
-      relationshipHash !== null
-      && typeof relationshipHash === 'object'
-      && relationshipHash.firestore
+      relationshipHash !== null &&
+      typeof relationshipHash === "object" &&
+      relationshipHash.firestore
     ) {
       const path = buildPathFromRef(relationshipHash);
-      const pathNodes = path.split('/');
+      const pathNodes = path.split("/");
       const belongsToId = pathNodes[pathNodes.length - 1];
 
       return { id: belongsToId, type: relationshipModelName };
@@ -50,12 +50,12 @@ export default JSONSerializer.extend({
     const links = {};
 
     modelClass.eachRelationship((name, descriptor) => {
-      if (descriptor.kind === 'belongsTo') {
+      if (descriptor.kind === "belongsTo") {
         if (
-          resourceHash.hasOwnProperty(name)
-          && resourceHash[name] !== null
-          && typeof resourceHash[name] === 'object'
-          && resourceHash[name].firestore
+          resourceHash.hasOwnProperty(name) &&
+          resourceHash[name] !== null &&
+          typeof resourceHash[name] === "object" &&
+          resourceHash[name].firestore
         ) {
           const path = buildPathFromRef(resourceHash[name]);
 
@@ -64,11 +64,11 @@ export default JSONSerializer.extend({
       } else {
         const cardinality = modelClass.determineRelationshipType(
           descriptor,
-          this.get('store'),
+          this.get("store")
         );
         let hasManyPath;
 
-        if (cardinality === 'manyToOne') {
+        if (cardinality === "manyToOne") {
           hasManyPath = pluralize(descriptor.type);
         } else {
           const collectionName = buildCollectionName(modelClass.modelName);
@@ -97,12 +97,12 @@ export default JSONSerializer.extend({
       const docId = json[relationship.key];
       const path = `${collectionName}/${docId}`;
 
-      if (this.getAdapterOptionAttribute(snapshot, 'onServer')) {
+      if (this.getAdapterOptionAttribute(snapshot, "onServer")) {
         json[relationship.key] = path;
       } else {
         json[relationship.key] = buildRefFromPath(
-          this.get('firebase').firestore(),
-          path,
+          this.get("firestore.instance"),
+          path
         );
       }
     }
@@ -117,17 +117,16 @@ export default JSONSerializer.extend({
     if (json[relationship.key]) {
       const references = [];
 
-      json[relationship.key].forEach((id) => {
+      json[relationship.key].forEach(id => {
         const collectionName = buildCollectionName(relationship.type);
         const path = `${collectionName}/${id}`;
 
-        if (this.getAdapterOptionAttribute(snapshot, 'onServer')) {
+        if (this.getAdapterOptionAttribute(snapshot, "onServer")) {
           references.push(path);
         } else {
-          references.push(buildRefFromPath(
-            this.get('firebase').firestore(),
-            path,
-          ));
+          references.push(
+            buildRefFromPath(this.get("firestore.instance"), path)
+          );
         }
       });
 
@@ -144,7 +143,7 @@ export default JSONSerializer.extend({
     const json = this._super(snapshot, ...args);
 
     snapshot.eachRelationship((name, relationship) => {
-      if (relationship.kind === 'hasMany') {
+      if (relationship.kind === "hasMany") {
         delete json[name];
       }
     });
@@ -162,12 +161,12 @@ export default JSONSerializer.extend({
    */
   getAdapterOptionAttribute(snapshot, key) {
     if (
-      snapshot.adapterOptions
-      && snapshot.adapterOptions.hasOwnProperty(key)
+      snapshot.adapterOptions &&
+      snapshot.adapterOptions.hasOwnProperty(key)
     ) {
-      return snapshot['adapterOptions'][key];
+      return snapshot["adapterOptions"][key];
     }
 
     return null;
-  },
+  }
 });
